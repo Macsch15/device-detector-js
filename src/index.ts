@@ -1,18 +1,13 @@
-import ClientParser, { ClientResult } from "./parsers/client";
 import DeviceParser, { DeviceResult } from "./parsers/device";
 import OperatingSystemParser, { Result as OperatingSystemResult } from "./parsers/operating-system";
 import VendorFragmentParser from "./parsers/vendor-fragment";
-import BrowserParser from "./parsers/client/browser";
-import BotParser = require("./parsers/bot");
 import { userAgentParser } from "./utils/user-agent";
 import { versionCompare } from "./utils/version-compare";
 
 namespace DeviceDetector {
   export interface DeviceDetectorResult {
-    client: ClientResult;
     device: DeviceResult;
     os: OperatingSystemResult;
-    bot: BotParser.DeviceDetectorBotResult;
   }
 
   export interface DeviceDetectorOptions {
@@ -22,11 +17,9 @@ namespace DeviceDetector {
 }
 
 class DeviceDetector {
-  private clientParser: ClientParser;
   private deviceParser: DeviceParser;
   private operatingSystemParser: OperatingSystemParser;
   private vendorFragmentParser: VendorFragmentParser;
-  private botParser: BotParser;
 
   // Default options
   private readonly options: DeviceDetector.DeviceDetectorOptions = {
@@ -36,19 +29,15 @@ class DeviceDetector {
 
   constructor(options?: Partial<DeviceDetector.DeviceDetectorOptions>) {
     this.options = {...this.options, ...options};
-    this.clientParser = new ClientParser(this.options);
     this.deviceParser = new DeviceParser();
     this.operatingSystemParser = new OperatingSystemParser(this.options);
     this.vendorFragmentParser = new VendorFragmentParser();
-    this.botParser = new BotParser();
   }
 
   public parse = (userAgent: string): DeviceDetector.DeviceDetectorResult => {
     const result: DeviceDetector.DeviceDetectorResult = {
-      client: this.clientParser.parse(userAgent),
       os: this.operatingSystemParser.parse(userAgent),
       device: this.deviceParser.parse(userAgent),
-      bot: this.options.skipBotDetection ? null : this.botParser.parse(userAgent)
     };
 
     const osName = result.os?.name;
@@ -82,7 +71,7 @@ class DeviceDetector {
      * If it is present the device should be a smartphone, otherwise it's a tablet
      * See https://developer.chrome.com/multidevice/user-agent#chrome_for_android_user_agent
      */
-    if (!result.device?.type && osFamily === "Android" && BrowserParser.getBrowserFamily(result.client?.name || "") === "Chrome") {
+    if (!result.device?.type && osFamily === "Android") {
       if (userAgentParser("Chrome/[.0-9]* Mobile", userAgent)) {
         if (!result.device) {
           result.device = this.createDeviceObject();
@@ -189,17 +178,6 @@ class DeviceDetector {
       result.device.type = "television";
     }
 
-    /**
-     * Devices running Kylo or Espital TV Browsers are assumed to be televisions
-     */
-    if (!result.device?.type && ["Kylo", "Espial TV Browser"].includes(result.client?.name || "")) {
-      if (!result.device) {
-        result.device = this.createDeviceObject();
-      }
-
-      result.device.type = "television";
-    }
-
     // set device type to desktop for all devices running a desktop os that were not detected as an other device type
     if (!result.device?.type && this.isDesktop(result, osFamily)) {
       if (!result.device) {
@@ -225,18 +203,7 @@ class DeviceDetector {
       return false;
     }
 
-    // Check for browsers available for mobile devices only
-    if (this.usesMobileBrowser(result.client)) {
-      return false;
-    }
-
     return OperatingSystemParser.getDesktopOsArray().includes(osFamily);
-  };
-
-  private usesMobileBrowser = (client: DeviceDetector.DeviceDetectorResult["client"]) => {
-    if (!client) return false;
-
-    return client?.type === "browser" && BrowserParser.isMobileOnlyBrowser(client?.name);
   };
 
   private isToucheEnabled = (userAgent: string) => {
