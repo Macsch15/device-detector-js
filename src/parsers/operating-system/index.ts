@@ -65,18 +65,6 @@ export default class OperatingSystemParser {
       result.name = variableReplacement(operatingSystem.name, match);
       result.version = formatVersion(variableReplacement(operatingSystem.version, match), this.options.versionTruncation);
 
-      if (result.name === "lubuntu") {
-        result.name = "Lubuntu";
-      }
-
-      if (result.name === "debian") {
-        result.name = "Debian";
-      }
-
-      if (result.name === "YunOS") {
-        result.name = "YunOs";
-      }
-
       return result;
     }
 

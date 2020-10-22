@@ -25,14 +25,3 @@ export const formatVersion = (version: string | undefined, versionTruncation: 0 
 
   return versionString;
 };
-
-export const parseBrowserEngineVersion = (userAgent: string, engine: string) => {
-  if (!engine) return "";
-
-  const regex = new RegExp(`${engine}\\s*\\/?\\s*((?:(?=\\d+\\.\\d)\\d+[.\\d]*|\\d{1,7}(?=(?:\\D|$))))`, "i");
-  const match = userAgent.match(regex);
-
-  if (!match) return "";
-
-  return match.pop();
-};
