@@ -43,20 +43,6 @@ export default class MobileParser {
       break;
     }
 
-    // Sanitize device type
-    if (result.type === "tv") {
-      result.type = "television";
-    }
-
-    if (result.type === "car browser") {
-      result.type = "car";
-    }
-
-    // Sanitize device brand
-    if (result.brand === "Unknown") {
-      result.brand = "";
-    }
-
     return result;
   };
 }
